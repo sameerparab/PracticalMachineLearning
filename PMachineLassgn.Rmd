@@ -1,0 +1,57 @@
+---
+title: "Practical Machine Learning Assignment"
+author: "Sameer Parab"
+date: "Saturday, October 25, 2014"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r eval=FALSE}
+library(caret)
+library(ggplot2)
+
+#Reading training and test data
+trainData <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+testData <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+#Cleaning and pre-processing data-
+# Removing empty Na and empty columns
+filterData <- trainData[,!sapply(trainData,function(x) any(is.na(x)))]
+filterData2 <- filterData[,!sapply(filterData,function(x) any(x == ""))]
+# Removing descriptor variables user_name, raw_time_stamp etc..
+trainDataf <- subset(filterData2, select= -c(1:7))
+
+
+#Setting seed and 10-fold cross-validation 
+set.seed(1)
+fitControl <- trainControl(method="cv",number=10)
+
+#Random forest algorithm model
+modelrf <- train(classe ~ .,data=trainDataf,method="rf",trControl=fitControl,metric="Accuracy")
+print(modelrf$finalModel)
+#Gradient boosting algorithm model
+gbmFit <- train(classe ~ .,data=trainDataf,method="gbm",trControl=fitControl,metric="Accuracy")
+print(gbmFit$finalModel)
+
+#Confusion matrix and accuracy
+rfFit = predict(modelrf,newdata=trainDataf)
+confusionMatrix(data=rfFit,trainData$classe)
+
+gbmPred = predict(gbmFit,newdata=trainDataf)
+confusionMatrix(data=gbmPred,trainDataf$classe)
+
+#Variable importance
+rfImp<- varImp(modelrf)
+plot(rfImp)
+
+gbmImp= varImp(gbmFit)
+plot(gbmImp)
+
+#Predicted values on test data
+rfPredtest = predict(modelrf,newdata=testData)
+gbmPredtest = predict(gbmFit,newdata=testData)
+```
+
